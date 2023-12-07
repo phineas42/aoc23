@@ -10,6 +10,63 @@ die() {
 	exit 1
 }
 
+quicksort() {
+	local ARRAY_NAME=$1
+	declare -n ARRAY=$ARRAY_NAME
+	declare COMP_FUNC=$2
+	local START_INDEX=${3:-0}
+	# END_INDEX is exclusive, not inclusive of the index itself
+	local END_INDEX=${4:-${#ARRAY[@]}}
+	local LEN=$((END_INDEX-START_INDEX))
+	local L R LINDEX RINDEX TINDEX PIVOT LEFTLEN
+	declare -a LEFTCOPY
+
+	if [[ $LEN -lt 2 ]]; then
+		return
+	elif [[ $LEN -eq 2 ]]; then
+		LINDEX=$START_INDEX
+		RINDEX=$((LINDEX+1))
+		L=${ARRAY[$LINDEX]}
+		R=${ARRAY[$RINDEX]}
+		$COMP_FUNC "$L" "$R"
+		if [[ "$RESULT" -lt 0 ]]; then
+			ARRAY[$LINDEX]=$R
+			ARRAY[$RINDEX]=$L
+		fi
+		return
+	fi
+	PIVOT=$((START_INDEX+(END_INDEX-START_INDEX)/2))
+	LEFTLEN=$((PIVOT-START_INDEX))
+	quicksort "$ARRAY_NAME" "$COMP_FUNC" "$START_INDEX" "$PIVOT"
+	quicksort "$ARRAY_NAME" "$COMP_FUNC" "$PIVOT" "$END_INDEX"
+	LEFTCOPY=("${ARRAY[@]:${START_INDEX}:${LEFTLEN}}")
+	LINDEX=0
+	RINDEX=$PIVOT
+	while [[ "$LINDEX" -lt "$LEFTLEN" || "$RINDEX" -lt "$END_INDEX" ]]; do
+		TINDEX=$((START_INDEX+LINDEX+RINDEX-PIVOT))
+		if [[ "$LINDEX" -ge "$LEFTLEN" ]]; then
+			RESULT=-1
+		elif [[ "$RINDEX" -ge "$END_INDEX" ]]; then
+			RESULT=1
+		else
+			$COMP_FUNC "${LEFTCOPY[$LINDEX]}" "${ARRAY[$RINDEX]}"
+		fi
+
+		if [[ "$RESULT" -gt 0 ]]; then
+			ARRAY[$TINDEX]=${LEFTCOPY[$LINDEX]}
+			LINDEX=$((LINDEX+1))
+		else
+			ARRAY[$TINDEX]=${ARRAY[$RINDEX]}
+			RINDEX=$((RINDEX+1))
+		fi
+	done
+}
+
+comp() {
+	local LEFT=$1 RIGHT=$2
+	RESULT=$((RIGHT-LEFT))
+}
+
 declare -A CARD_VALUES=(
 	[A]=14
 	[K]=13
@@ -136,50 +193,24 @@ rate_hand() {
 
 compare_hands() {
 	local HAND1=$1 HAND2=$2 RATE1 RATE2 CARD1 CARD2 VALUE1 VALUE2 I
-	HAND1=$1
-	HAND2=$2
 	for ((I=0;I<6; I++)); do
 		CARD1=${HAND1:$I:1}
 		VALUE1=${CARD_VALUES[$CARD1]}
 		CARD2=${HAND2:$I:1}
 		VALUE2=${CARD_VALUES[$CARD2]}
-		if [[ "$VALUE1" -gt "$VALUE2" ]]; then
-			RESULT=-1
-			#echo "$HAND2 < $HAND1"
-			return
-		elif [[ "$VALUE1" -lt "$VALUE2" ]]; then
-			RESULT=1
-			#echo "$HAND1 < $HAND2"
+		RESULT=$((VALUE2-VALUE1))
+		if [[ "$RESULT" != 0 ]]; then
 			return
 		fi
 	done
 	RESULT=0
 }
-
-sort_ratedhands_bids() {
-	local J I HAND1 HAND2
-	# This is a very inefficient sorting algorithm
-	for ((J=0; J<${#RATEDHANDS_BIDS[@]}; J++)); do
-		for ((I=0; I<${#RATEDHANDS_BIDS[@]}-1; I++)); do
-			HAND1=${RATEDHANDS_BIDS[$I]}
-			HAND2=${RATEDHANDS_BIDS[$((I+1))]}
-			compare_hands "$HAND1" "$HAND2"
-			if [[ "$RESULT" == -1 ]]; then
-				RATEDHANDS_BIDS[$I]=$HAND2
-				RATEDHANDS_BIDS[$((I+1))]=$HAND1
-			fi
-		done
-	done
-}
-
 declare -a RATEDHANDS_BIDS
 while IFS= read HAND; do
 	rate_hand "$HAND"
 	RATEDHANDS_BIDS+=("${RESULT}")
 done <<<"$INPUT_DATA"
-
-sort_ratedhands_bids
-
+quicksort RATEDHANDS_BIDS compare_hands
 ACCUMULATOR=0
 for ((I=0;I<${#RATEDHANDS_BIDS[@]}; I++)); do
 	HAND=${RATEDHANDS_BIDS[$I]}
