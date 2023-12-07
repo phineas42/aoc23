@@ -62,12 +62,7 @@ quicksort() {
 	done
 }
 
-comp() {
-	local LEFT=$1 RIGHT=$2
-	RESULT=$((RIGHT-LEFT))
-}
-
-declare -A CARD_VALUES=(
+declare -A CARD_RANKS=(
 	[A]=14
 	[K]=13
 	[Q]=12
@@ -83,121 +78,118 @@ declare -A CARD_VALUES=(
 	[J]=1
 )
 
-
 rate_hand() {
 	local HAND=$1 CARD VALUE COUNT SEEN3 SEEN2 I
 	unset COUNTS
 	declare -a COUNTS
+	declare -a BINS
 	for ((I=0;I<5; I++)); do
 		CARD=${HAND:$I:1}
-		VALUE=${CARD_VALUES[$CARD]}
+		VALUE=${CARD_RANKS[$CARD]}
 		COUNT=${COUNTS[$VALUE]} || COUNT=0
 		COUNTS[$VALUE]=$((COUNT+1))
 	done
-
-	SEEN3=0
-	SEEN2=0
 	for VALUE in ${!COUNTS[@]}; do
-		COUNT=${COUNTS[$VALUE]}
-		if [[ "$COUNT" == 5 ]]; then
-			# 5 of a kind
-			RESULT="8$HAND"
-			return
-		elif [[ "$VALUE" == 1 ]]; then
-			# Don't base a hand on Jokers
-			continue
-		elif [[ "$COUNT" == 4 ]]; then
-			# 4 of a kind
-			if [[ "${COUNTS[1]}" -gt 0 ]]; then
-				# 5 of a kind (J)
-				RESULT="8$HAND"
-				return
-			else
-				RESULT="7$HAND"
-				return
-			fi
-			return
-		elif [[ "$COUNT" == 3 ]]; then
-			if [[ "${COUNTS[1]}" -gt 1 ]]; then
-				# 5 of a kind (JJ)
-				RESULT="8$HAND"
-				return
-			elif [[ "${COUNTS[1]}" -gt 0 ]]; then
-				# 4 of a kind (J)
-				RESULT="7$HAND"
-				return
-			elif [[ "$SEEN2" == 1 ]]; then
-				# Full House A
-				RESULT="6$HAND"
-				return
-			fi
-			SEEN3=1
-		elif [[ "$COUNT" == 2 ]]; then
-			if [[ "${COUNTS[1]}" -gt 2 ]]; then
-				# 5 of a kind (JJJ)
-				RESULT="8$HAND"
-				return
-			elif [[ "${COUNTS[1]}" -gt 1 ]]; then
-				# 4 of a kind (JJ)
-				RESULT="7$HAND"
-				return
-			elif [[ "${COUNTS[0]}" -gt 0 ]]; then
-				if [[ "$SEEN2" == 1 ]]; then
-					# Full House (J)
-					RESULT="6$HAND"
-					return
-				fi
-			elif [[ "$SEEN3" == 1 ]]; then
-				# Full House B
-				RESULT="6$HAND"
-				return
-			elif [[ "$SEEN2" == 1 ]]; then
-				# Two Pair
-				RESULT="4$HAND"
-				return
-			fi
-			SEEN2=1
+		if [[ "$VALUE" != ${CARD_RANKS[J]} ]]; then
+			COUNT=${COUNTS[$VALUE]}
+			BINS+=("$COUNT $VALUE")
 		fi
 	done
-	if [[ "$SEEN3" == 1 ]]; then
-		# Three of a Kind
-		RESULT="5$HAND"
-	elif [[ "$SEEN2" == 1 ]]; then
-		if [[ "${COUNTS[1]}" -gt 0 ]]; then
-			# 3 of a kind (J)
-			RESULT="5$HAND"
+
+	quicksort BINS compare_bins
+
+	JOKER_COUNT=${COUNTS[${CARD_RANKS[J]}]:-0}
+	if [[ "$JOKER_COUNT" -eq 5 ]]; then
+		RESULT="8$HAND"
+		# echo "$HAND: $RESULT 5 of a kind "
+		return
+	fi
+
+	ORDER1=(${BINS[0]})
+	ORDER2=(${BINS[1]})
+	COUNT1=${ORDER1[0]}
+	VALUE1=${ORDER1[1]}
+	COUNT2=${ORDER2[0]}
+	VALUE2=${ORDER2[1]}
+	if [[ "$COUNT1" -eq 5 ]]; then
+		RESULT="8$HAND"
+		# echo "$HAND: $RESULT 5 of a kind"
+		return
+	elif [[ "$COUNT1" -eq 4 ]]; then
+		RESULT="$((7+JOKER_COUNT))$HAND"
+		# echo "$HAND: $RESULT $((4+JOKER_COUNT)) of a kind"
+		return
+	elif [[ "$COUNT1" -eq 3 ]]; then
+		if [[ "$JOKER_COUNT" -gt 0 ]]; then
+			RESULT="$((6+JOKER_COUNT))$HAND"
+			# echo "$HAND: $RESULT $((3+JOKER_COUNT)) of a kind"
+			return
+		elif [[ "$COUNT2" -eq 2 ]]; then
+			RESULT="6$HAND"
+			# echo "$HAND: $RESULT Full house"
+			return
 		else
-			# One pair
+			RESULT="5$HAND"
+			# echo "$HAND: $RESULT Three of a kind"
+			return
+		fi
+	elif [[ "$COUNT1" -eq 2 ]]; then
+		if [[ "$JOKER_COUNT" -gt 1 ]]; then
+			RESULT="$((5+JOKER_COUNT))$HAND"
+			# echo "$HAND: $RESULT $((2+JOKER_COUNT)) of a kind"
+			return
+		elif [[ "$JOKER_COUNT" -eq 1 ]]; then
+			if [[ "$COUNT2" -eq 2 ]]; then
+				RESULT="6$HAND"
+				# echo "$HAND: $RESULT full house"
+				return
+			else
+				RESULT="5$HAND"
+				# echo "$HAND: $RESULT Three of a kind"
+				return
+			fi
+		elif [[ "$COUNT2" -eq 2 ]]; then
+			RESULT="4$HAND"
+			# echo "$HAND: $RESULT Two pair"
+			return
+		else
 			RESULT="3$HAND"
+			# echo "$HAND: $RESULT One pair"
+			return
 		fi
 	else
-		if [[ "${COUNTS[1]}" == 4 ]]; then
-			# 5 of a kind (JJJJ)
-			RESULT="8$HAND"
-		elif [[ "${COUNTS[1]}" == 3 ]]; then
-			# 4 of a kind (JJJ)
-			RESULT="7$HAND"
-		elif [[ "${COUNTS[1]}" == 2 ]]; then
-			# 3 of a kind (JJ)
+		if [[ "$JOKER_COUNT" -gt 2 ]]; then
+			RESULT="$((4+JOKER_COUNT))$HAND"
+			# echo "$HAND: $RESULT $((1+JOKER_COUNT)) of a kind"
+			return
+		elif [[ "$JOKER_COUNT" -eq 2 ]]; then
 			RESULT="5$HAND"
-		elif [[ "${COUNTS[1]}" == 1 ]]; then
-			# One pair (J)
+			# echo "$HAND: $RESULT Three of a kind"
+			return
+		elif [[ "$JOKER_COUNT" -eq 1 ]]; then
 			RESULT="3$HAND"
+			# echo "$HAND: $RESULT One pair"
+			return
 		else
-			# High card
 			RESULT="2$HAND"
+			# echo "$HAND: $RESULT High card"
+			return
 		fi
 	fi
-	set +x
+}
+
+compare_bins() {
+	local COUNT1=${1% *} COUNT2=${2% *}
+	RESULT=$((COUNT1-COUNT2))
 }
 
 compare_hands() {
 	local HAND1=$1 HAND2=$2 RATE1 RATE2 CARD1 CARD2 VALUE1 VALUE2 I
 	for ((I=0;I<6; I++)); do
 		CARD1=${HAND1:$I:1}
-		VALUE1=${CARD_VALUES[$CARD1]}
+		VALUE1=${CARD_RANKS[$CARD1]}
 		CARD2=${HAND2:$I:1}
-		VALUE2=${CARD_VALUES[$CARD2]}
+		VALUE2=${CARD_RANKS[$CARD2]}
 		RESULT=$((VALUE2-VALUE1))
 		if [[ "$RESULT" != 0 ]]; then
 			return
