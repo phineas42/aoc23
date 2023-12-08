@@ -17,8 +17,6 @@ declare -A NODES
 		NODES[${BASH_REMATCH[1]}]=${BASH_REMATCH[@]:2}
 	done
 } <<<"$INPUT_DATA"
-declare -p INSTRUCTIONS
-declare -p NODES
 
 STARTING_NODES=()
 for NODE in ${!NODES[@]}; do
@@ -26,20 +24,6 @@ for NODE in ${!NODES[@]}; do
 		STARTING_NODES+=($NODE)
 	fi
 done
-
-CURRENT_NODES=(${STARTING_NODES[*]})
-COUNT=0
-
-invalid_end_state() {
-	for NODE in ${CURRENT_NODES[@]}; do
-		if [[ "$NODE" =~ ..Z ]]; then
-			:
-		else
-			return 0
-		fi
-	done
-	return 1
-}
 
 # determine solution pattern for each starting node individually
 declare -a SOLUTIONS
@@ -62,14 +46,11 @@ for NODE in ${STARTING_NODES[@]}; do
 	done
 	SOLUTIONS+=($COUNT)
 done
-declare -p SOLUTIONS
 
 lcm() {
-	set -x
         local ARRAY_NAME=$1
         declare -n ARRAY=$ARRAY_NAME
 	local L R ML MR
-	echo ${ARRAY[@]}
 	RESULT=${ARRAY[0]}
 	for ((I=1;I<${#ARRAY[@]};I++)); do
 		L=$RESULT
