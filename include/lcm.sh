@@ -34,10 +34,8 @@ lcm_array() {
 lcm_array_by_factors() {
 	local ARRAY_NAME=$1
 	declare -n ARRAY=$ARRAY_NAME
-	local L R ML MR INCL INCR
-	declare -a L_FACTORS
-	L=1
-	L_FACTORS=()
+	local R L_FACTOR R_FACTOR L_POWER R_POWER
+	declare -a L_FACTORS=()
 	for R in ${ARRAY[@]}; do
 		prime_factorize $R
 		# RESULT is the prime factors of R. Process it in-place
@@ -45,13 +43,14 @@ lcm_array_by_factors() {
 			R_POWER=${RESULT[$R_FACTOR]}
 			L_POWER=${L_FACTORS[$R_FACTOR]:-0}
 			if [[  $L_POWER -lt $R_POWER ]]; then
-				L=$((L*R_FACTOR**(R_POWER-L_POWER)))
 				L_FACTORS[$R_FACTOR]=$R_POWER
 			fi
 		done
 	done
-	RESULT=$L
-	set +x
+	RESULT=1
+	for L_FACTOR in ${!L_FACTORS[@]}; do
+		RESULT=$((RESULT*L_FACTOR**${L_FACTORS[$L_FACTOR]}))
+	done
 }
 
 
