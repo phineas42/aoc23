@@ -6,6 +6,7 @@
 . max.sh
 . lcm.sh
 . factor.sh
+. sum.sh
 
 assert() {
 	TEST_DESCRIPTION=$1
@@ -75,3 +76,6 @@ NUMBER=$((403831127700000))
 EXPECTED_RESULT=([2]="5" [3]="2" [5]="5" [7]="1" [11]="1" [13]="2" [29]="2" [41]="1")
 prime_factorize $NUMBER
 assert "prime factorize" [[ \""${RESULT[*]}"\" == \""${EXPECTED_RESULT[@]}"\" ]]
+
+sum_array RANDOM_ARRAY
+assert "sum_array" [[ \$RESULT == 0 ]]
