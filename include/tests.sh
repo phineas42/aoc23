@@ -1,8 +1,11 @@
+#!/usr/bin/bash
+
 . binarysearch.sh
 . quicksort.sh
 . min.sh
 . max.sh
 . lcm.sh
+. factor.sh
 
 assert() {
 	TEST_DESCRIPTION=$1
@@ -43,20 +46,32 @@ binarysearch_array TEST_ARRAY searchcondition_equals -4
 assert "Test find of negative number in sorted list" [[ "$RESULT" -eq 6 ]]
 
 min_array RANDOM_ARRAY
-assert "min_array" [[ "$RESULT" -eq -10 ]]
+assert "Test find minimum number in an array" [[ "$RESULT" -eq -10 ]]
 
 min ${RANDOM_ARRAY[@]}
-assert "min" [[ "$RESULT" -eq -10 ]]
+assert "Test find minimum number in arguments" [[ "$RESULT" -eq -10 ]]
 
 max_array RANDOM_ARRAY
-assert "max_array" [[ "$RESULT" -eq 10 ]]
+assert "Test find maximum number in an array" [[ "$RESULT" -eq 10 ]]
 
 max ${RANDOM_ARRAY[@]}
-assert "max" [[ "$RESULT" -eq 10 ]]
+assert "Test find maximum number in arguments" [[ "$RESULT" -eq 10 ]]
 
 lcm 123 456 789
-assert "lcm" [[ "$RESULT" -eq 4917048 ]]
+assert "Test compute least common multiple in arguments" [[ "$RESULT" -eq 4917048 ]]
 
 NUMBERS=(123 456 789)
 lcm_array NUMBERS
-assert "lcm_array" [[ "$RESULT" -eq 4917048 ]]
+assert "Test compute least common multiple in an array" [[ "$RESULT" -eq 4917048 ]]
+
+lcm_array_by_factors NUMBERS
+assert "Test compute least common multiple in an array (factor method)" [[ "$RESULT" -eq 4917048 ]]
+
+#Note: this test can give false failures
+assert "no subshells" [[ $(bash -c 'echo $$') == $(($$+1)) ]]
+
+
+NUMBER=$((403831127700000))
+EXPECTED_RESULT=([2]="5" [3]="2" [5]="5" [7]="1" [11]="1" [13]="2" [29]="2" [41]="1")
+prime_factorize $NUMBER
+assert "prime factorize" [[ \""${RESULT[*]}"\" == \""${EXPECTED_RESULT[@]}"\" ]]
