@@ -3,13 +3,14 @@
 set -e
 set -u
 
-. binarysearch.sh
-. quicksort.sh
-. min.sh
-. max.sh
-. lcm.sh
-. factor.sh
-. sum.sh
+this_dir=${BASH_SOURCE[0]%/*}
+if [[ "$this_dir" == "${BASH_SOURCE[0]}" ]]; then
+        this_dir=.
+fi
+
+for inc_file in ${this_dir}/include/*.sh; do
+	. $inc_file
+done
 
 assert() {
 	local test_description=$1; shift
@@ -22,6 +23,7 @@ assert() {
 	else
 		if [[ "$test_description" == "test" ]]; then
 			echo $'\x1b[31mFAILED\x1b[0m'
+			echo "    $@"
 		else
 			echo "ASSERT FAILED: $test_description"
 		fi
@@ -103,3 +105,24 @@ assert "test" [[ \""${_result[*]}"\" == \""${expected_result[@]}"\" ]]
 echo -n "Test: sum_array ... "
 sum_array random_array
 assert "test" [[ "$_result" == 0 ]]
+
+string="....#..#.."
+echo -n "Test: find_index first ... "
+find_index "#" $string
+assert "test" [[ \""${_result[0]}"\" -eq 4 ]]
+
+echo -n "Test: find_index second ... "
+find_index "#" $string $((_result[0] + 1))
+assert "test" [[ \""${_result[0]}"\" -eq 7 ]]
+
+echo -n "Test: find_index end ... "
+find_index "#" $string $((_result[0] + 1))
+assert "test" [[ \""${_result[0]}"\" -eq -1 ]]
+
+echo -n "Test: abs positive ... "
+abs 100
+assert "test" [[ "$_result" == 100 ]]
+
+echo -n "Test: abs negative ... "
+abs -100
+assert "test" [[ "$_result" == 100 ]]
