@@ -4,7 +4,6 @@ set -e
 INPUT_FILE=$1
 INPUT_DATA=$(<"$INPUT_FILE")
 
-. ../include/max.sh
 . ../include/sum.sh
 declare -a DERIVATIVES
 ACCUMULATOR=0
@@ -13,7 +12,7 @@ while read HISTORY; do
 	DERIVATIVES=("$HISTORY")
 	DEPTH=0
 	sum_array HISTORY_ARRAY
-	while [[ "$RESULT" != 0 ]]; do
+	while [[ "$_result" != 0 ]]; do
 		DEPTH=$((DEPTH+1))
 		DELTAS_UP=(${DERIVATIVES[$((DEPTH-1))]})
 		DELTAS=()
