@@ -1,67 +1,68 @@
 default_comp() {
-	unset RESULT
-	declare -g RESULT
-	local L=$1
-	local R=$2
-	local I DIFF
-	for ((I=0;I<${#L}&&I<${#R};I++)); do
-		DIFF=$((R-L))
-		if [[ "$DIFF" != 0 ]]; then
-			RESULT=$DIFF
+	unset _result
+	declare -g _result
+	local arg_L=$1
+	local arg_R=$2
+	local i diff
+	for ((i=0; i<${#arg_L} && i<${#arg_R}; i++)); do
+		diff=$((arg_R - arg_L))
+		if [[ "$diff" != 0 ]]; then
+			_result=$diff
 			return 0
 		fi
 	done
-	RESULT=$((${#R}-${#L}))
+	# if the arguments are equal up to the end of the shorter one, use length.
+	_result=$((${#arg_R} - ${#arg_L}))
 }
 
 quicksort_array() {
-	local ARRAY_NAME=$1
-	declare -n ARRAY=$ARRAY_NAME
-	declare COMP_FUNC=${2:-default_comp}
-	local START_INDEX=${3:-0}
-	# END_INDEX is exclusive, not inclusive of the index itself
-	local END_INDEX=${4:-${#ARRAY[@]}}
-	local LEN=$((END_INDEX-START_INDEX))
-	local L R LINDEX RINDEX TINDEX PIVOT LEFTLEN
-	declare -a LEFTCOPY
+	local array_name=$1
+	declare -n array=$array_name
+	declare comp_func=${2:-default_comp}
+	local start_index=${3:-0}
+	# end_index is exclusive, not inclusive of the index itself
+	local end_index=${4:-${#array[@]}}
+	local len=$((end_index - start_index))
+	local elem_L elem_R index_L index_R index_target pivot len_L
+	declare -a copy_L
 
-	if [[ $LEN -lt 2 ]]; then
+	if [[ $len -lt 2 ]]; then
 		return
-	elif [[ $LEN -eq 2 ]]; then
-		LINDEX=$START_INDEX
-		RINDEX=$((LINDEX+1))
-		L=${ARRAY[$LINDEX]}
-		R=${ARRAY[$RINDEX]}
-		$COMP_FUNC "$L" "$R"
-		if [[ "$RESULT" -lt 0 ]]; then
-			ARRAY[$LINDEX]=$R
-			ARRAY[$RINDEX]=$L
+	elif [[ $len -eq 2 ]]; then
+		index_L=$start_index
+		index_R=$((index_L + 1))
+		elem_L=${array[index_L]}
+		elem_R=${array[index_R]}
+		$comp_func "$elem_L" "$elem_R"
+		if [[ "$_result" -lt 0 ]]; then
+			array[index_L]=$elem_R
+			array[index_R]=$elem_L
 		fi
 		return
 	fi
-	PIVOT=$((START_INDEX+(END_INDEX-START_INDEX)/2))
-	LEFTLEN=$((PIVOT-START_INDEX))
-	quicksort_array "$ARRAY_NAME" "$COMP_FUNC" "$START_INDEX" "$PIVOT"
-	quicksort_array "$ARRAY_NAME" "$COMP_FUNC" "$PIVOT" "$END_INDEX"
-	LEFTCOPY=("${ARRAY[@]:${START_INDEX}:${LEFTLEN}}")
-	LINDEX=0
-	RINDEX=$PIVOT
-	while [[ "$LINDEX" -lt "$LEFTLEN" || "$RINDEX" -lt "$END_INDEX" ]]; do
-		TINDEX=$((START_INDEX+LINDEX+RINDEX-PIVOT))
-		if [[ "$LINDEX" -ge "$LEFTLEN" ]]; then
-			RESULT=-1
-		elif [[ "$RINDEX" -ge "$END_INDEX" ]]; then
-			RESULT=1
+	pivot=$((start_index + (end_index - start_index)/2))
+	len_L=$((pivot - start_index))
+	quicksort_array "$array_name" "$comp_func" "$start_index" "$pivot"
+	quicksort_array "$array_name" "$comp_func" "$pivot" "$end_index"
+	copy_L=("${array[@]:${start_index}:${len_L}}")
+	index_L=0
+	index_R=$pivot
+	while [[ "$index_L" -lt "$len_L" || "$index_R" -lt "$end_index" ]]; do
+		index_target=$((start_index + index_L + index_R - pivot))
+		if [[ "$index_L" -ge "$len_L" ]]; then
+			_result=-1
+		elif [[ "$index_R" -ge "$end_index" ]]; then
+			_result=1
 		else
-			$COMP_FUNC "${LEFTCOPY[$LINDEX]}" "${ARRAY[$RINDEX]}"
+			$comp_func "${copy_L[index_L]}" "${array[index_R]}"
 		fi
 
-		if [[ "$RESULT" -gt 0 ]]; then
-			ARRAY[$TINDEX]=${LEFTCOPY[$LINDEX]}
-			LINDEX=$((LINDEX+1))
+		if [[ "$_result" -gt 0 ]]; then
+			array[index_target]=${copy_L[index_L]}
+			index_L=$((index_L + 1))
 		else
-			ARRAY[$TINDEX]=${ARRAY[$RINDEX]}
-			RINDEX=$((RINDEX+1))
+			array[index_target]=${array[index_R]}
+			index_R=$((index_R + 1))
 		fi
 	done
 }

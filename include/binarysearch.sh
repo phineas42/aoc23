@@ -1,39 +1,41 @@
 # Search condition to find an integer in a sorted array
 searchcondition_equals() {
+	unset _result
+	declare -g _result
         # Template variables
-        local SEARCH_TARGET=$1; shift
+        local search_target=$1; shift
         # Search Condition variables
-        local ARRAY_NAME=$1
-        local TEST_INDEX=$2
-        declare -n ARRAY=$ARRAY_NAME
+        local array_name=$1 test_index=$2
+        declare -n array=$array_name
         # look for number
-        RESULT=$((${ARRAY[$TEST_INDEX]}-${SEARCH_TARGET}))
+	_result=$((${array[test_index]} - ${search_target}))
 }
 
 
 binarysearch_array() {
-	local ARRAY_NAME=$1
-	declare -n ARRAY=$ARRAY_NAME
-	shift
-	local SEARCH_CONDITION=$@
-	local OLD_PIVOT PIVOT
-	local MIN_INDEX=0 MAX_INDEX=${#ARRAY[@]}
-	while [[ "$MIN_INDEX" -lt "$MAX_INDEX" ]]; do
-		local OLD_PIVOT=$PIVOT
-		local PIVOT=$((MIN_INDEX+(MAX_INDEX-MIN_INDEX)/2))
-		if [[ "$OLD_PIVOT" == "$PIVOT" ]]; then
+	unset _result
+	declare -g _result
+	local array_name=$1
+	declare -n array=$array_name; shift
+	local search_condition=$@
+	local old_pivot pivot
+	local min_index=0 max_index=${#array[@]}
+	while [[ "$min_index" -lt "$max_index" ]]; do
+		local old_pivot=${pivot:-}
+		local pivot=$((min_index + (max_index - min_index)/2))
+		if [[ "$old_pivot" == "$pivot" ]]; then
 			break
 		fi
-		${SEARCH_CONDITION} $ARRAY_NAME $PIVOT
-		if [[ "$RESULT" -eq 0 ]]; then
-			RESULT=$PIVOT
+		${search_condition} $array_name $pivot
+		if [[ "$_result" -eq 0 ]]; then
+			_result=$pivot
 			return 0
-		elif [[ "$RESULT" -gt 0 ]]; then
-			MAX_INDEX=$PIVOT
+		elif [[ "$_result" -gt 0 ]]; then
+			max_index=$pivot
 		else
-			MIN_INDEX=$((PIVOT+1))
+			min_index=$((pivot + 1))
 		fi
 	done
-	RESULT=-1
+	_result=-1
 	return -1
 }

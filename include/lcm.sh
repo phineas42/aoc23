@@ -1,83 +1,93 @@
-. ${BASH_SOURCE[0]%/*}/factor.sh
+include_dir=${BASH_SOURCE[0]%/*}
+if [[ "$include_dir" == "${BASH_SOURCE[0]}" ]]; then
+	include_dir=.
+fi
+. ${include_dir}/factor.sh
 
 lcm_array() {
-	local ARRAY_NAME=$1
-	declare -n ARRAY=$ARRAY_NAME
-	local L R ML MR INCL INCR
-	RESULT=${ARRAY[0]}
-	for ((I=1;I<${#ARRAY[@]};I++)); do
-		L=$RESULT
-		R=${ARRAY[$I]}
-		ML=$L
-		MR=$R
-		while [[ "$ML" -ne "$MR" ]]; do
-			if [[ "$ML" -gt "$MR" ]]; then
-				if [[ $(( (ML-MR) % R )) == 0 ]]; then
-					MR=$ML
+	unset _result
+	declare -g _result
+	local array_name=$1
+	declare -n array=$array_name
+	local num_L num_R multiple_L multiple_R addend
+	_result=${array[0]}
+	for ((i=1; i<${#array[@]}; i++)); do
+		num_L=$_result
+		num_R=${array[i]}
+		multiple_L=$num_L
+		multiple_R=$num_R
+		while [[ "$multiple_L" -ne "$multiple_R" ]]; do
+			if [[ "$multiple_L" -gt "$multiple_R" ]]; then
+				if [[ $(( (multiple_L - multiple_R) % num_R )) == 0 ]]; then
+					multiple_R=$multiple_L
 				else
-					INCR=$((((ML-MR) / R)+1))
-					MR=$((MR+R*INCR))
+					addend=$(( ((multiple_L - multiple_R) / num_R) + 1))
+					multiple_R=$((multiple_R + num_R*addend))
 				fi
 			else
-				if [[ $(( (MR-ML) % L )) == 0 ]]; then
-					ML=$MR
+				if [[ $(( (multiple_R - multiple_L) % num_L )) == 0 ]]; then
+					multiple_L=$multiple_R
 				else
-					INCL=$((((MR-ML) / L)+1))
-					ML=$((ML+L*INCL))
+					addend=$(( ( (multiple_R - multiple_L) / num_L) + 1))
+					multiple_L=$(( multiple_L + num_L*addend))
 				fi
 			fi
 		done
-		RESULT=$ML
+		_result=$multiple_L
 	done
 }
 
 lcm_array_by_factors() {
-	local ARRAY_NAME=$1
-	declare -n ARRAY=$ARRAY_NAME
-	local R L_FACTOR R_FACTOR L_POWER R_POWER
-	declare -a L_FACTORS=()
-	for R in ${ARRAY[@]}; do
-		prime_factorize $R
-		# RESULT is the prime factors of R. Process it in-place
-		for R_FACTOR in ${!RESULT[@]}; do
-			R_POWER=${RESULT[$R_FACTOR]}
-			L_POWER=${L_FACTORS[$R_FACTOR]:-0}
-			if [[  $L_POWER -lt $R_POWER ]]; then
-				L_FACTORS[$R_FACTOR]=$R_POWER
+	unset _result
+	declare -g _result
+	local array_name=$1
+	declare -n array=$array_name
+	local num_R factor_L factor_R power_L power_R
+	declare -a factors_L=()
+	for num_R in ${array[@]}; do
+		prime_factorize $num_R
+		# _result is the prime factors of R. Process it in-place
+		for factor_R in ${!_result[@]}; do
+			power_R=${_result[factor_R]}
+			power_L=${factors_L[factor_R]:-0}
+			if [[  $power_L -lt $power_R ]]; then
+				factors_L[factor_R]=$power_R
 			fi
 		done
 	done
-	RESULT=1
-	for L_FACTOR in ${!L_FACTORS[@]}; do
-		RESULT=$((RESULT*L_FACTOR**${L_FACTORS[$L_FACTOR]}))
+	_result=1
+	for factor_L in ${!factors_L[@]}; do
+		_result=$(( _result * factor_L**${factors_L[factor_L]}))
 	done
 }
 
 
 lcm() {
-	local L R ML MR INCL INCR
-	RESULT=1
-	for R in $@; do
-		L=$RESULT
-		ML=$L
-		MR=$R
-		while [[ "$ML" -ne "$MR" ]]; do
-			if [[ "$ML" -gt "$MR" ]]; then
-				if [[ $(( (ML-MR) % R )) == 0 ]]; then
-					MR=$ML
+	unset _result
+	declare -g _result
+	local num_L num_R multiple_L multiple_R addend
+	_result=1
+	for num_R in $@; do
+		num_L=$_result
+		multiple_L=$num_L
+		multiple_R=$num_R
+		while [[ "$multiple_L" -ne "$multiple_R" ]]; do
+			if [[ "$multiple_L" -gt "$multiple_R" ]]; then
+				if [[ $(( (multiple_L - multiple_R) % num_R )) == 0 ]]; then
+					multiple_R=$multiple_L
 				else
-					INCR=$((((ML-MR) / R)+1))
-					MR=$((MR+R*INCR))
+					addend=$(( ((multiple_L - multiple_R) / num_R) + 1))
+					multiple_R=$((multiple_R + num_R*addend))
 				fi
 			else
-				if [[ $(( (MR-ML) % L )) == 0 ]]; then
-					ML=$MR
+				if [[ $(( (multiple_R - multiple_L) % num_L )) == 0 ]]; then
+					multiple_L=$multiple_R
 				else
-					INCL=$((((MR-ML) / L)+1))
-					ML=$((ML+L*INCL))
+					addend=$(( ((multiple_R - multiple_L) / num_L) + 1))
+					multiple_L=$((multiple_L + num_L*addend))
 				fi
 			fi
 		done
-		RESULT=$ML
+		_result=$multiple_L
 	done
 }

@@ -1,19 +1,15 @@
 prime_factorize() {
-	local NUM=$1
-	unset RESULT
-	declare -g -a RESULT=()
-	local I
-	for ((I=2; I<$((NUM/2)); )); do
-		if [[ $((NUM%I)) -eq 0 ]]; then
-			if [[ -n ${RESULT[$I]} ]]; then
-				RESULT[$I]=$((${RESULT[$I]}+1))
-			else
-				RESULT[$I]=1
-			fi
-			NUM=$((NUM/I))
+	unset _result
+	declare -g -a _result
+	local num=$1
+	local i
+	for ((i=2; i<$((num / 2)); )); do
+		if [[ $((num % i)) -eq 0 ]]; then
+			_result[i]=$((${_result[i]:-0} + 1))
+			num=$((num / i))
 		else
-			I=$((I+1))
+			i=$((i + 1))
 		fi
 	done
-	RESULT[$NUM]=$((${RESULT[$NUM]}+1))
+	_result[num]=$((${result[num]:-0} + 1))
 }
