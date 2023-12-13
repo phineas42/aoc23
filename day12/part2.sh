@@ -27,23 +27,14 @@ apply_groups() {
 		remain=0
 	fi
 	#echo -n "${indent}"; declare -p remain
-
+	local last_index=$index
 	while [[ $((index + group)) -le $((${#pattern} - remain)) ]]; do
-		skipped=${pattern:0:$index}
+		skipped=${pattern:$last_index:$((index-last_index))}
 		if [[ "$skipped" =~ \# ]]; then
 			# you can't skip over any "#"
 			break
 		fi
 		subpattern=${pattern:$index:$((group+1))}
-		#for ((i=0;i<skip;i++)); do
-		#	echo -n " "
-		#done
-		#echo $pattern $index $((group+1))
-		#for ((i=0;i<index+skip;i++)); do
-		#	echo -n " "
-		#done
-		#echo $subpattern
-		#printf "${indent}%02d \"%s\"\n" $index $subpattern
 		if [[ "$subpattern" =~ ^[\?\#]{$group}[\?\.]?$ ]]; then
 			#echo "${indent}match"
 			recursepattern=${pattern:$((index+group+1))}
@@ -58,6 +49,7 @@ apply_groups() {
 				count_solutions=$((count_solutions + _result))
 			fi
 		fi
+		last_index=$index
 		index=$((index + 1))
 	done
 	_result=$count_solutions
@@ -66,19 +58,13 @@ apply_groups() {
 }
 
 accumulator=0
-# index=0
 while read pattern groups_str; do
-	# echo "$pattern $groups_str (index $index)"
 	pattern="$pattern?$pattern?$pattern?$pattern?$pattern"
 	groups_str="$groups_str,$groups_str,$groups_str,$groups_str,$groups_str"
 	IFS=,
 	groups=($groups_str)
 	unset IFS
 	apply_groups "$pattern" "${groups[*]}"
-	if [[ "$_result" -eq 0 ]]; then
-		continue
-	fi
 	accumulator=$((accumulator+_result))
-	# index=$((index+1))
 done <<<"$input_data"
 echo $accumulator
