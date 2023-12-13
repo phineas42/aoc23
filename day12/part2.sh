@@ -66,36 +66,19 @@ apply_groups() {
 }
 
 accumulator=0
-index=0
+# index=0
 while read pattern groups_str; do
-	echo "$pattern $groups_str (index $index)"
-	results=()
-	factors=()
-	this_pattern="$pattern"
-	this_groups_str="$groups_str"
+	# echo "$pattern $groups_str (index $index)"
+	pattern="$pattern?$pattern?$pattern?$pattern?$pattern"
+	groups_str="$groups_str,$groups_str,$groups_str,$groups_str,$groups_str"
 	IFS=,
-	this_groups=($this_groups_str)
+	groups=($groups_str)
 	unset IFS
-	apply_groups "$this_pattern" "${this_groups[*]}"
+	apply_groups "$pattern" "${groups[*]}"
 	if [[ "$_result" -eq 0 ]]; then
 		continue
 	fi
-	results+=($_result)
-	factors+=($_result)
-	last_result=$_result
-	last_factor=$_result
-	for ((i=1; i<5; i++)); do
-		this_pattern="$this_pattern?$pattern"
-		this_groups_str="$this_groups_str,$groups_str"
-		IFS=,
-		groups=($this_groups_str)
-		unset IFS
-		apply_groups "$this_pattern" "${groups[*]}"
-		results+=($_result)
-		last_result=$_result
-	done
-	declare -p results
 	accumulator=$((accumulator+_result))
-	index=$((index+1))
+	# index=$((index+1))
 done <<<"$input_data"
 echo $accumulator
