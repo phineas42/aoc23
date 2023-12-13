@@ -143,7 +143,9 @@ echo -n "Test: abs negative ... "
 abs -100
 assert "test" [[ "$_result" == 100 ]]
 
-
+echo -n "Test: tr ... "
+tr "fuzzy zumba" "uz" "43"
+assert "test" [[ \""$_result"\" == \""f433y 34mba"\" ]]
 
 
 
