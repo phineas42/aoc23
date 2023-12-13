@@ -4,9 +4,16 @@ sum_array() {
 	local array_name=$1
 	declare -n array=$array_name
 	local skip=${2:-0}
+	local len=${3:-}
 	_result=0
 	local addend
-	for addend in ${array[@]:$skip}; do
-		_result=$((_result + addend))
-	done
+	if [[ -n "$len" ]]; then
+		for addend in ${array[@]:$skip:$len}; do
+			_result=$((_result + addend))
+		done
+	else
+		for addend in ${array[@]:$skip}; do
+			_result=$((_result + addend))
+		done
+	fi
 }

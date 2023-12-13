@@ -91,12 +91,8 @@ echo -n "Test: compute least common multiple in an array (factor method) ... "
 lcm_array_by_factors numbers
 assert "test" [[ "$_result" -eq 4917048 ]]
 
-#Note: this test can give false failures
-echo -n "Weak test: no subshells ... "
-assert "test" [[ $(bash -c 'echo $$') == $(($$ + 1)) ]]
-
-
 number=$((403831127700000))
+array_to_multiply=(2 2 2 2 2 3 3 5 5 5 5 5 7 11 13 13 29 29 41)
 expected_result=([2]="5" [3]="2" [5]="5" [7]="1" [11]="1" [13]="2" [29]="2" [41]="1")
 echo -n "Test: prime factorize ... "
 prime_factorize $number
@@ -105,6 +101,26 @@ assert "test" [[ \""${_result[*]}"\" == \""${expected_result[@]}"\" ]]
 echo -n "Test: sum_array ... "
 sum_array random_array
 assert "test" [[ "$_result" == 0 ]]
+
+echo -n "Test: sum_array with skip ... "
+sum_array random_array 7
+assert "test" [[ "$_result" == -2 ]]
+
+echo -n "Test: sum_array with skip and len ... "
+sum_array random_array 3 16
+assert "test" [[ "$_result" == 8 ]]
+
+echo -n "Test: product_array ... "
+product_array array_to_multiply
+assert "test" [[ "$_result" == 403831127700000 ]]
+
+echo -n "Test: product_array with skip ... "
+product_array array_to_multiply 2
+assert "test" [[ "$_result" == 100957781925000 ]]
+
+echo -n "Test: product_array with skip and len ... "
+product_array array_to_multiply 3 10
+assert "test" [[ "$_result" == 787500 ]]
 
 string="....#..#.."
 echo -n "Test: find_index first ... "
@@ -126,3 +142,13 @@ assert "test" [[ "$_result" == 100 ]]
 echo -n "Test: abs negative ... "
 abs -100
 assert "test" [[ "$_result" == 100 ]]
+
+
+
+
+
+#Note: this test can give false failures
+echo -n "Weak test: no subshells ... "
+assert "test" [[ $(bash -c 'echo $$') == $(($$ + 1)) ]]
+
+
