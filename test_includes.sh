@@ -147,6 +147,9 @@ echo -n "Test: tr ... "
 tr "fuzzy zumba" "uz" "43"
 assert "test" [[ \""$_result"\" == \""f433y 34mba"\" ]]
 
+echo -n "Test: rev ... "
+rev "fuzzy zumba"
+assert "test" [[ \""$_result"\" == \""abmuz yzzuf"\" ]]
 
 
 #Note: this test can give false failures
