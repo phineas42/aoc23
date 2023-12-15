@@ -151,6 +151,14 @@ echo -n "Test: rev ... "
 rev "fuzzy zumba"
 assert "test" [[ \""$_result"\" == \""abmuz yzzuf"\" ]]
 
+declare -a data=( [0]="abcd" [1]="efgh" [2]="ijkl" )
+echo -n "Test: transpose_array ... "
+transpose_array data
+assert "test" [[ \""${_result[*]}"\" == \""aei bfj cgk dhl"\" ]]
+
+echo -n "Test: hamming distance ... "
+hamming_distance "telluride canal feral" "tellurium banal decal"
+assert "test" [[ $_result -eq 5 ]]
 
 #Note: this test can give false failures
 echo -n "Weak test: no subshells ... "
